@@ -6,6 +6,8 @@
   "preload": "preload.js",
   "logo": "logo.png",
   "author": "Jimmie",
+  "homepage": "https://github.com/lee88688/dataset",
+  "platform": ["win32"],
   "features": [
     {
       "code": "dataset",
