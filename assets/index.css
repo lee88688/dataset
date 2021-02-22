@@ -1,0 +1,54 @@
+.dataset {
+  height: 100vh;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: stretch;
+  display: none;
+}
+
+.dataset.show {
+  display: flex;
+}
+
+.dataset .aside {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 30%;
+  border-right: 1px solid #eeeeee;
+  overflow: auto;
+}
+
+.dataset .aside .list-group-item {
+  border-radius: 0;
+  /* border-left: 0;
+  border-right: 0; */
+  border: 0;
+  user-select: none;
+}
+
+.dataset .aside .list-group-item.active {
+  color: #212529;
+  background-color: #e9ecef;
+  border-color: #e9ecef;
+}
+
+.dataset .content {
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.dataset .content iframe {
+  height: 100%;
+  width: 100%;
+  display: block;
+}
+
+/* -------------- setting ---------------- */
+.setting {
+  padding: 10px;
+  display: none;
+}
+
+.setting.show {
+  display: block;
+}
