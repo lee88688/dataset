@@ -21,7 +21,15 @@ window.resolveDataset = async function(base) {
 
 window.searchDb = async function(dbPath, key) {
   const db = await open({ filename: dbPath, driver: sqlite3.Database })
-  const result = await db.all(`select name, type, path from searchIndex where name like '%${key}%' limit 100`)
+  // 构建 sql
+  let key_array = key.split(' ');
+  let build_sql = 'select name, type, path from searchIndex where name like \'%%\' ';
+  key_array.forEach(item=>{
+    build_sql += "and name like '%" + item + "%' "
+  })
+  build_sql += ' limit 100'
+  // 查询
+  const result = await db.all(build_sql)
   await db.close()
   return result
 }
