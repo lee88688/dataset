@@ -2,7 +2,7 @@
   "pluginName": "Dash Dataset",
   "description": "能够将Dash的documentation sets直接在utools中进行搜索",
   "version": "1.0.0",
-  "main": "index.html",
+  "main": "dist/index.html",
   "preload": "preload.js",
   "logo": "logo.png",
   "author": "Jimmie",
@@ -13,5 +13,8 @@
       "code": "dataset",
       "cmds": ["dataset"]
     }
-  ]
+  ],
+  "development": {
+    "main": "http://localhost:3000/"
+  }
 }

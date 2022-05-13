@@ -15,7 +15,7 @@ window.resolveDataset = async function(base) {
 
   return {
     dbPath,
-    base: path.resolve(base, 'Contents/Resources/Documents')
+    docBasePath: path.resolve(base, 'Contents/Resources/Documents')
   }
 }
 
