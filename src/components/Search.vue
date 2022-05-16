@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { useEventBus } from '@vueuse/core';
 import debounce from 'lodash/debounce'
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import Mark from 'mark.js'
 import { DBData } from '../DBData';
 import { CurEnvData, TableItemData } from '../interfaces';
@@ -42,7 +42,14 @@ const props = defineProps<{
 const list = ref<DBItem[]>([])
 const activeIndex = ref(-1)
 
-const curDbItem = ref<TableItemData>()
+// const curDbItem = ref<TableItemData>()
+const curDbItem = computed(() => {
+  if (props.envData) {
+    const { code } = props.envData
+    const item = props.dbData.findByKey(code)
+    return item
+  }
+})
 
 const iframe = ref<HTMLIFrameElement>()
 const iframeSrc = ref('')
@@ -52,14 +59,15 @@ const isContentSearch = ref(false)
 
 let mark: Mark
 onMounted(() => {
-  // mark = new Mark(iframe.value!.parentElement!)
-  mark = new Mark(document.body)
+  // console.log('----', iframe.value!.parentElement!)
+  mark = new Mark(iframe.value!.parentElement!)
+  // mark = new Mark(document.body)
   ;(window as any).mark = mark
   ;(window as any).Mark = Mark
 })
 
 const itemClick = (index: number, path: string) => {
-  const { url } = window.getHTMLPath(curDbItem.value!.docBasePath, path)
+  const { url } = window.getHTMLPath(curDbItem.value!.base, path)
   iframeSrc.value = url
   activeIndex.value = index
   // console.log('path: ', path)
@@ -96,15 +104,14 @@ const searchDataSet = async (pattern: string) => {
 }
 const debounceSearch = debounce(searchDataSet, 200)
 
-watch(() => props.envData, () => {
-  if (props.envData) {
-    const { code } = props.envData
-    const item = props.dbData.findByKey(code)
-    if (item) curDbItem.value = item;
-    searchDataSet('')
-  }
+onMounted(() => {
+  console.log('mounted')
+  searchDataSet('')
+  utools.setSubInput((e) => {
+    const { text } = e as any
+    debounceSearch(text)
+  })
 })
-
 
 const onPluginEnter = useEventBus(onPluginEnterKey)
 onPluginEnter.on(() => {
@@ -117,9 +124,24 @@ onPluginEnter.on(() => {
 // 在搜索框中可以使用 Tab 键进行导航
 const onTabKeyUp = (e: KeyboardEvent) => {
   console.log(e)
-  if (e.key !== 'Tab') return
+  let nextIndex: number
+  switch(e.key) {
+    case 'ArrowDown': {
+      nextIndex = activeIndex.value + 1
+      break
+    }
+    case 'ArrowUp': {
+      nextIndex = activeIndex.value - 1
+      break
+    }
+    case 'Tab': {
+      nextIndex = activeIndex.value + 1
+      break
+    }
+    default:
+      return
+  }
   e.preventDefault()
-  const nextIndex = activeIndex.value + 1
   if (!(nextIndex in list.value)) return
   itemClick(nextIndex, list.value[nextIndex].path)
 }

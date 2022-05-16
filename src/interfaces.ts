@@ -3,7 +3,7 @@ export interface TableItemData {
   key: string;
   path: string;
   dbPath: string;
-  docBasePath: string;
+  base: string; // 文档基础路径
 }
 
 export const DB_ID = 'db-setting-id'

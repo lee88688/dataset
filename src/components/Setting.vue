@@ -51,7 +51,7 @@ const formData = ref<TableItemData>({
   key: '',
   path: '',
   dbPath: '',
-  docBasePath: '',
+  base: '',
 })
 
 const formRules = reactive<FormRules>({
