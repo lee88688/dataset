@@ -15,6 +15,9 @@
     }
   ],
   "development": {
-    "main": "http://localhost:3000/"
+    "main": "dist/index.html"
+  },
+  "pluginSetting": {
+    "single": false
   }
 }

@@ -1,12 +1,13 @@
 <template>
   <section class="search">
-    <aside>
+    <aside :class="isContentSearch ? 'hide' : ''">
       <ul class="list-group">
-        <a 
+        <a
           v-for="(item, index) in list"
           :key="index"
           class="list-group-item list-group-item-action"
           :class="index === activeIndex ? 'active' : ''"
+          :tabindex="index"
           @click="itemClick(index, item.path)"
         >
           <div class="h5">{{item.name}}</div>
@@ -15,7 +16,7 @@
       </ul>
     </aside>
     <main>
-      <iframe :src="iframeSrc" />
+      <iframe ref="iframe" :src="iframeSrc" />
     </main>
   </section>
 </template>
@@ -23,7 +24,8 @@
 <script setup lang="ts">
 import { useEventBus } from '@vueuse/core';
 import debounce from 'lodash/debounce'
-import { onActivated, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import Mark from 'mark.js'
 import { DBData } from '../DBData';
 import { CurEnvData, TableItemData } from '../interfaces';
 import { onPluginEnterKey } from '../utools-event-bus';
@@ -42,10 +44,55 @@ const activeIndex = ref(-1)
 
 const curDbItem = ref<TableItemData>()
 
+const iframe = ref<HTMLIFrameElement>()
+const iframeSrc = ref('')
+
+const searchParams = reactive({ databaseStr: '', contentStr: '' })
+const isContentSearch = ref(false)
+
+let mark: Mark
+onMounted(() => {
+  // mark = new Mark(iframe.value!.parentElement!)
+  mark = new Mark(document.body)
+  ;(window as any).mark = mark
+  ;(window as any).Mark = Mark
+})
+
+const itemClick = (index: number, path: string) => {
+  const { url } = window.getHTMLPath(curDbItem.value!.docBasePath, path)
+  iframeSrc.value = url
+  activeIndex.value = index
+  // console.log('path: ', path)
+}
+
 const searchDataSet = async (pattern: string) => {
-  if (!curDbItem.value) return
-  const result = await window.searchDb(curDbItem.value.dbPath, pattern)
+  const strs = pattern.split(' ')
+  // 当数据为空的时候不认为字符串相同，避免初始状态下没有搜索数据
+  const isDatabaseStrSame = strs[0] && searchParams.databaseStr === strs[0]
+  // const isContentStrSame = searchParams.contentStr === strs[1]
+  searchParams.databaseStr = strs[0]
+  searchParams.contentStr = strs[1]
+
+  if (searchParams.contentStr) {
+    mark.unmark({ iframes: true })
+    mark.mark(searchParams.contentStr, { iframes: true })
+  } else {
+    mark.unmark({ iframes: true })
+  }
+
+  if (strs.length === 2) {
+    isContentSearch.value = true
+  } else {
+    isContentSearch.value = false
+  }
+
+  if (!curDbItem.value || searchParams.contentStr || isDatabaseStrSame) return
+  // 在数据库中搜索数据
+  const result = await window.searchDb(curDbItem.value.dbPath, searchParams.databaseStr)
   list.value = result
+  if (result.length) {
+    itemClick(0, result[0].path)
+  }
 }
 const debounceSearch = debounce(searchDataSet, 200)
 
@@ -58,15 +105,6 @@ watch(() => props.envData, () => {
   }
 })
 
-const iframeSrc = ref('')
-
-const itemClick = (index: number, path: string) => {
-  const { url } = window.getHTMLPath(curDbItem.value!.docBasePath, path)
-  iframeSrc.value = url
-  activeIndex.value = index
-  console.log('path: ', path)
-}
-
 
 const onPluginEnter = useEventBus(onPluginEnterKey)
 onPluginEnter.on(() => {
@@ -74,6 +112,22 @@ onPluginEnter.on(() => {
     const { text } = e as any
     debounceSearch(text)
   })
+})
+
+// 在搜索框中可以使用 Tab 键进行导航
+const onTabKeyUp = (e: KeyboardEvent) => {
+  console.log(e)
+  if (e.key !== 'Tab') return
+  e.preventDefault()
+  const nextIndex = activeIndex.value + 1
+  if (!(nextIndex in list.value)) return
+  itemClick(nextIndex, list.value[nextIndex].path)
+}
+onMounted(() => {
+  window.addEventListener('keydown', onTabKeyUp)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onTabKeyUp)
 })
 </script>
 
@@ -88,6 +142,10 @@ onPluginEnter.on(() => {
     flex: 0 0 30%;
     border-right: 1px solid #eeeeee;
     overflow: auto;
+
+    &.hide {
+      display: none;
+    }
 
     .list-group {
       list-style-type: none;

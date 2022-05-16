@@ -46,4 +46,9 @@ html, body {
   padding: 0;
   margin: 0;
 }
+
+mark {
+  padding: 0;
+  background-color: yellow;
+}
 </style>

@@ -21,7 +21,7 @@ window.resolveDataset = async function(base) {
 
 window.searchDb = async function(dbPath, key) {
   const db = await open({ filename: dbPath, driver: sqlite3.Database })
-  const result = await db.all(`select name, type, path from searchIndex where name like '%${key}%' limit 100`)
+  const result = await db.all(`select name, type, path from searchIndex where name like '%${key}%' order by length(name) limit 100`)
   await db.close()
   return result
 }

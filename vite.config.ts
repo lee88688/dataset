@@ -7,6 +7,7 @@ import DefineOptions from 'unplugin-vue-define-options/vite'
 export default defineConfig({
   plugins: [vue(), ElementPlus({}), DefineOptions()],
   build: {
-    outDir: 'package/dist'
-  }
+    outDir: 'package/dist',
+  },
+  base: ''
 })
