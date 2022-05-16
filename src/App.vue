@@ -13,13 +13,13 @@ import Setting from './components/Setting.vue'
 import Search from './components/Search.vue'
 import { DBData } from './DBData'
 import { CurEnvData } from './interfaces'
-import { onPluginEnterKey } from './utools-event-bus'
+import { onPluginEnterKey, onPluginOutKey } from './utools-event-bus'
 
 defineOptions({
-  components: { Setting, Search }
+  components: { Setting, Search, Empty: { render() { return null } } }
 })
 
-const curComponent = ref('Search')
+const curComponent = ref('Empty')
 
 const envData = ref<CurEnvData>()
 
@@ -28,12 +28,18 @@ dbData.readData()
 
 const onPluginEnter = useEventBus(onPluginEnterKey)
 onPluginEnter.on((e) => {
+  // console.log('plugin enter --- app')
   envData.value = e;
   if (e.code === 'dataset') {
     curComponent.value = 'Setting'
   } else {
     curComponent.value = 'Search'
   }
+})
+
+const onPluginOut = useEventBus(onPluginOutKey)
+onPluginOut.on(() => {
+  curComponent.value = 'Empty'
 })
 </script>
 
