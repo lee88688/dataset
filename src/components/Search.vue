@@ -57,14 +57,14 @@ const iframeSrc = ref('')
 const searchParams = reactive({ databaseStr: '', contentStr: '' })
 const isContentSearch = ref(false)
 
-let mark: Mark
-onMounted(() => {
-  // console.log('----', iframe.value!.parentElement!)
-  mark = new Mark(iframe.value!.parentElement!)
-  // mark = new Mark(document.body)
-  ;(window as any).mark = mark
-  ;(window as any).Mark = Mark
-})
+let mark: Mark | null = null
+// onMounted(() => {
+//   // console.log('----', iframe.value!.parentElement!)
+//   mark = new Mark(iframe.value!.parentElement!)
+//   // mark = new Mark(document.body)
+//   ;(window as any).mark = mark
+//   ;(window as any).Mark = Mark
+// })
 
 const itemClick = (index: number, path: string) => {
   const { url } = window.getHTMLPath(curDbItem.value!.base, path)
@@ -81,11 +81,16 @@ const searchDataSet = async (pattern: string) => {
   searchParams.databaseStr = strs[0]
   searchParams.contentStr = strs[1]
 
-  if (searchParams.contentStr) {
-    mark.unmark({ iframes: true })
-    mark.mark(searchParams.contentStr, { iframes: true })
+  if (!searchParams.contentStr && strs.length === 2 && !mark) {
+    // 首次输入空格，此时进入页内受挫
+    mark = new Mark(iframe.value!.contentDocument!.body)
+  } else if (searchParams.contentStr) {
+    mark?.unmark({ iframes: true })
+    mark?.mark(searchParams.contentStr, { iframes: true })
+  } else if (strs.length === 1) {
+    mark = null
   } else {
-    mark.unmark({ iframes: true })
+    mark?.unmark({ iframes: true })
   }
 
   if (strs.length === 2) {

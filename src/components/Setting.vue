@@ -57,7 +57,19 @@ const formData = ref<TableItemData>({
 const formRules = reactive<FormRules>({
   name: { type: 'string', required: true, trigger: 'blur', message: '请输入数据集描述' },
   key: { type: 'string', required: true, trigger: 'blur', message: '请输入功能关键字' },
-  path: { type: 'string', required: true, trigger: 'blur', message: '请输入功能文件夹路径' },
+  path: { 
+    type: 'string', 
+    required: true, 
+    trigger: 'blur', 
+    async asyncValidator (rule, value) {
+      if (!value) throw new Error('请输入路径')
+      try {
+        await window.resolveDataset(value)
+      } catch (e) {
+        throw new Error('输入的路径不正确')
+      }
+    }
+  },
 })
 
 const formIns = ref<FormInstance>()
@@ -73,6 +85,13 @@ const addItem = async () => {
   const itemObj = { ...formData.value, ...meta }
 
   props.dbData.addItem(itemObj)
+  formData.value = {
+    name: '',
+    key: '',
+    path: '',
+    dbPath: '',
+    base: '',
+  }
 }
 
 const removeItem = (index: number) => {
