@@ -25,7 +25,7 @@
 import { useEventBus } from '@vueuse/core';
 import debounce from 'lodash/debounce'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import Mark from 'mark.js'
+// import Mark from 'mark.js'
 import { DBData } from '../DBData';
 import { CurEnvData, TableItemData } from '../interfaces';
 import { onPluginEnterKey } from '../utools-event-bus';
@@ -57,14 +57,7 @@ const iframeSrc = ref('')
 const searchParams = reactive({ databaseStr: '', contentStr: '' })
 const isContentSearch = ref(false)
 
-let mark: Mark | null = null
-// onMounted(() => {
-//   // console.log('----', iframe.value!.parentElement!)
-//   mark = new Mark(iframe.value!.parentElement!)
-//   // mark = new Mark(document.body)
-//   ;(window as any).mark = mark
-//   ;(window as any).Mark = Mark
-// })
+let isFinding = false
 
 const itemClick = (index: number, path: string) => {
   const { url } = window.getHTMLPath(curDbItem.value!.base, path)
@@ -81,16 +74,12 @@ const searchDataSet = async (pattern: string) => {
   searchParams.databaseStr = strs[0]
   searchParams.contentStr = strs[1]
 
-  if (!searchParams.contentStr && strs.length === 2 && !mark) {
-    // 首次输入空格，此时进入页内受挫
-    mark = new Mark(iframe.value!.contentDocument!.body)
-  } else if (searchParams.contentStr) {
-    mark?.unmark({ iframes: true })
-    mark?.mark(searchParams.contentStr, { iframes: true })
-  } else if (strs.length === 1) {
-    mark = null
+  if (searchParams.contentStr) {
+    utools.findInPage(searchParams.contentStr)
+    isFinding = true
   } else {
-    mark?.unmark({ iframes: true })
+    utools.stopFindInPage('clearSelection')
+    isFinding = false
   }
 
   if (strs.length === 2) {
@@ -128,7 +117,7 @@ onPluginEnter.on(() => {
 
 // 在搜索框中可以使用 Tab 键进行导航
 const onTabKeyUp = (e: KeyboardEvent) => {
-  console.log(e)
+  // console.log(e)
   let nextIndex: number
   switch(e.key) {
     case 'ArrowDown': {
@@ -142,6 +131,12 @@ const onTabKeyUp = (e: KeyboardEvent) => {
     case 'Tab': {
       nextIndex = activeIndex.value + 1
       break
+    }
+    case 'Enter': {
+      if (isFinding) {
+        utools.findInPage(searchParams.contentStr, { findNext: true })
+      }
+      return
     }
     default:
       return
