@@ -16,13 +16,13 @@
       </ul>
     </aside>
     <main>
-      <iframe ref="iframe" :src="iframeSrc" />
+      <iframe ref="iframe" tabindex="-1" :src="iframeSrc" />
     </main>
   </section>
 </template>
 
 <script setup lang="ts">
-import { useEventBus } from '@vueuse/core';
+import { useEventBus, watchOnce } from '@vueuse/core';
 import debounce from 'lodash/debounce'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 // import Mark from 'mark.js'
@@ -59,12 +59,75 @@ const isContentSearch = ref(false)
 
 let isFinding = false
 
+// 在搜索框中可以使用 Tab 键进行导航
+const onTabKeyUp = (e: KeyboardEvent) => {
+  console.log(e)
+  if (isFinding) {
+    switch(e.key) {
+      case 'Enter':
+      case 'Tab':
+      case 'ArrowDown': {
+        utools.findInPage(searchParams.contentStr, { findNext: true })
+        break
+      }
+      case 'ArrowUp': {
+        utools.findInPage(searchParams.contentStr, { findNext: true, forward: false })
+        break
+      }
+    }
+    e.preventDefault()
+    return
+  }
+
+  let nextIndex: number
+  switch(e.key) {
+    case 'Tab':
+    case 'ArrowDown': {
+      nextIndex = activeIndex.value + 1
+      break
+    }
+    case 'ArrowUp': {
+      nextIndex = activeIndex.value - 1
+      break
+    }
+    default:
+      return
+  }
+  e.preventDefault()
+  e.stopPropagation()
+  if (!(nextIndex in list.value)) return
+  itemClick(nextIndex, list.value[nextIndex].path)
+}
+onMounted(() => {
+  window.addEventListener('keydown', onTabKeyUp)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onTabKeyUp)
+})
+
 const itemClick = (index: number, path: string) => {
   const { url } = window.getHTMLPath(curDbItem.value!.base, path)
   iframeSrc.value = url
   activeIndex.value = index
   // console.log('path: ', path)
 }
+
+watchOnce(iframe, () => {
+  console.log('watch once')
+  iframe.value!.onload = () => {
+    // console.log('load')
+    // fixme: 因为 iframe 的 load 事件等待页面完全加载完成之后才会产生，可能导致进入页面一段时候后页面搜索快捷键才会生效
+    iframe.value?.contentWindow?.addEventListener('keydown', onTabKeyUp)
+  }
+  // const observer = new MutationObserver((mutations) => {
+  //   mutations.forEach((m) => {
+  //     if (m.type === 'attributes' && m.attributeName === 'src') {
+  //       console.log('iframe src has changed')
+  //     }
+  //   })
+  // })
+  // observer.observe(iframe.value!)
+})
 
 const searchDataSet = async (pattern: string) => {
   const strs = pattern.split(' ')
@@ -115,42 +178,6 @@ onPluginEnter.on(() => {
   })
 })
 
-// 在搜索框中可以使用 Tab 键进行导航
-const onTabKeyUp = (e: KeyboardEvent) => {
-  // console.log(e)
-  let nextIndex: number
-  switch(e.key) {
-    case 'ArrowDown': {
-      nextIndex = activeIndex.value + 1
-      break
-    }
-    case 'ArrowUp': {
-      nextIndex = activeIndex.value - 1
-      break
-    }
-    case 'Tab': {
-      nextIndex = activeIndex.value + 1
-      break
-    }
-    case 'Enter': {
-      if (isFinding) {
-        utools.findInPage(searchParams.contentStr, { findNext: true })
-      }
-      return
-    }
-    default:
-      return
-  }
-  e.preventDefault()
-  if (!(nextIndex in list.value)) return
-  itemClick(nextIndex, list.value[nextIndex].path)
-}
-onMounted(() => {
-  window.addEventListener('keydown', onTabKeyUp)
-})
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onTabKeyUp)
-})
 </script>
 
 <style scoped lang="scss">
