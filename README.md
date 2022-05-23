@@ -2,6 +2,8 @@
 
 Dash Dataset能够将Dash的documentation sets直接添加到utools中直接搜索，目前只支持单个数据集搜索。
 
+![](./artworks/example.gif)
+
 features:
 - 查找文档使用匹配结果排序，最短的在最前
 - 支持搜索时快捷选择，使用`Tab`或者`上下箭头`按键可以上下选择搜索结果
