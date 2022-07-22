@@ -5,6 +5,7 @@
         <a
           v-for="(item, index) in list"
           :key="index"
+          :id="`item-${index}`"
           class="list-group-item list-group-item-action"
           :class="index === activeIndex ? 'active' : ''"
           :tabindex="index"
@@ -110,6 +111,13 @@ const itemClick = (index: number, path: string) => {
   iframeSrc.value = url
   activeIndex.value = index
   // console.log('path: ', path)
+  const el = document.getElementById(`item-${index}`)!
+  let rect = el.getBoundingClientRect()
+  if (rect.top < 0) {
+    el.scrollIntoView({ block: 'start' })
+  } else if (rect.bottom > window.innerHeight) {
+    el.scrollIntoView({ block: 'end' })
+  }
 }
 
 watchOnce(iframe, () => {
