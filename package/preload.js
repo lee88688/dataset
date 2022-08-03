@@ -5,6 +5,8 @@ const fsPromise = require('fs').promises
 const sqlite3 = require('sqlite3')
 const { open } = require('sqlite')
 
+let tableInfo = new Map()
+
 // 解析数据集所在的文件夹
 window.resolveDataset = async function(base) {
   // const metaString = await fsPromise.readFile(path.resolve(base, 'meta.json'), { encoding: 'utf8' })
@@ -21,7 +23,21 @@ window.resolveDataset = async function(base) {
 
 window.searchDb = async function(dbPath, key) {
   const db = await open({ filename: dbPath, driver: sqlite3.Database })
-  const result = await db.all(`select name, type, path from searchIndex where name like '%${key}%' order by length(name) limit 100`)
+
+  let tableNames
+  if (!tableInfo.has(dbPath)) {
+    const info = await db.all(`PRAGMA table_info(searchIndex)`)
+    tableNames = info.map(({ name }) => name)
+    // console.log(tableNames)
+    tableInfo.set(dbPath, tableNames)
+  } else {
+    tableNames = tableInfo.get(dbPath)
+  }
+
+  const result = await db.all(`select ${tableNames.join(',')} from searchIndex where name like '%${key}%' order by length(name) limit 100`)
+  result.forEach(v => {
+    v.path = v.fragment ? `${v.path}#${v.fragment}` : v.path
+  })
   await db.close()
   return result
 }
